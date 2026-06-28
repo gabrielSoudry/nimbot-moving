@@ -3,6 +3,12 @@ import { DPMM, type LabelSize } from "./labels";
 
 export type Orientation = "horizontal" | "vertical";
 
+// Marge de securite (mm) retiree dans le sens de l'avance papier a l'impression,
+// pour ne pas deborder sur l'etiquette suivante (le gap entre etiquettes fait que
+// la zone imprimable est un peu plus courte que la cote nominale).
+// Augmente cette valeur si ca depasse encore, mets 0 si tu n'en veux pas.
+export const FEED_SAFETY_MM = 3;
+
 export type LabelData = {
   room: string;
   boxNumber: string;
@@ -122,7 +128,11 @@ export async function renderLabel(
   data: LabelData,
   forPrint = false,
 ): Promise<void> {
-  const w = Math.round(data.size.widthMm * DPMM);
+  // w = sens de l'avance papier (rows a l'impression) ; on le raccourcit
+  // legerement a l'impression pour tenir sur une seule etiquette.
+  // h = largeur sur la tete d'impression (cols) : inchangee pour remplir.
+  const feedMm = data.size.widthMm - (forPrint ? FEED_SAFETY_MM : 0);
+  const w = Math.round(feedMm * DPMM);
   const h = Math.round(data.size.heightMm * DPMM);
   const vertical = data.orientation === "vertical";
 
