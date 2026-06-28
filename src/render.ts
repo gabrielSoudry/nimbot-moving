@@ -11,7 +11,7 @@ export const FEED_SAFETY_MM = 6;
 
 // Taille du QR par rapport a la largeur disponible (1 = pleine largeur).
 // Baisse pour un QR plus petit, monte (max 1) pour plus grand.
-export const QR_SCALE = 0.88;
+export const QR_SCALE = 0.78;
 
 export type LabelData = {
   room: string;
@@ -73,13 +73,15 @@ function drawComposition(
   const carton = data.boxNumber ? `Carton N°${data.boxNumber}` : "Carton N°—";
 
   if (orientation === "vertical") {
-    // Portrait : QR en haut (centre horizontalement), texte en dessous,
-    // le tout reparti pour occuper toute la hauteur.
-    ctx.drawImage(qr, (lw - qrSize) / 2, pad, qrSize, qrSize);
+    // Portrait : QR en haut avec une marge egale haut/gauche/droite,
+    // texte en dessous, le tout reparti pour occuper la hauteur restante.
+    const sideMargin = (lw - qrSize) / 2; // marge gauche/droite
+    const qrY = sideMargin; // meme marge en haut
+    ctx.drawImage(qr, sideMargin, qrY, qrSize, qrSize);
 
     ctx.textAlign = "center";
     const cx = lw / 2;
-    const top = pad + qrSize + Math.round(lh * 0.03);
+    const top = qrY + qrSize + Math.round(lh * 0.03);
     const avail = lh - pad - top;
     const textW = lw - pad * 2;
 
