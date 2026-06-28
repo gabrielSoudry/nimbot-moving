@@ -9,6 +9,10 @@ export type Orientation = "horizontal" | "vertical";
 // Augmente cette valeur si ca depasse encore, mets 0 si tu n'en veux pas.
 export const FEED_SAFETY_MM = 6;
 
+// Taille du QR par rapport a la largeur disponible (1 = pleine largeur).
+// Baisse pour un QR plus petit, monte (max 1) pour plus grand.
+export const QR_SCALE = 0.88;
+
 export type LabelData = {
   room: string;
   boxNumber: string;
@@ -69,9 +73,9 @@ function drawComposition(
   const carton = data.boxNumber ? `Carton N°${data.boxNumber}` : "Carton N°—";
 
   if (orientation === "vertical") {
-    // Portrait : QR pleine largeur en haut, texte en dessous, le tout centre
-    // et reparti pour occuper toute la hauteur.
-    ctx.drawImage(qr, pad, pad, qrSize, qrSize);
+    // Portrait : QR en haut (centre horizontalement), texte en dessous,
+    // le tout reparti pour occuper toute la hauteur.
+    ctx.drawImage(qr, (lw - qrSize) / 2, pad, qrSize, qrSize);
 
     ctx.textAlign = "center";
     const cx = lw / 2;
@@ -92,8 +96,8 @@ function drawComposition(
     ctx.font = `bold ${cartonPx}px Arial, sans-serif`;
     ctx.fillText(carton, cx, y);
   } else {
-    // Paysage : QR pleine hauteur a gauche, texte a droite (remplit la largeur).
-    ctx.drawImage(qr, pad, pad, qrSize, qrSize);
+    // Paysage : QR a gauche (centre verticalement), texte a droite.
+    ctx.drawImage(qr, pad, (lh - qrSize) / 2, qrSize, qrSize);
 
     ctx.textAlign = "left";
     const textX = pad * 2 + qrSize;
@@ -169,7 +173,7 @@ export async function renderLabel(
   // Marge minimale = zone de silence du QR (necessaire pour le scan).
   // QR pleine largeur (vertical) ou pleine hauteur (horizontal).
   const pad = Math.round(Math.min(lw, lh) * 0.025);
-  const qrSize = vertical ? lw - pad * 2 : lh - pad * 2;
+  const qrSize = Math.round((vertical ? lw - pad * 2 : lh - pad * 2) * QR_SCALE);
   const qr = await makeQrCanvas(data.qrData, qrSize);
 
   drawComposition(ctx, lw, lh, data.orientation, data, qr, qrSize, pad);
