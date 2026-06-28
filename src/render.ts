@@ -11,7 +11,7 @@ export const FEED_SAFETY_MM = 6;
 
 // Taille du QR par rapport a la largeur disponible (1 = pleine largeur).
 // Baisse pour un QR plus petit, monte (max 1) pour plus grand.
-export const QR_SCALE = 0.78;
+export const QR_SCALE = 0.6;
 
 export type LabelData = {
   room: string;
@@ -47,7 +47,7 @@ async function makeQrCanvas(
   const c = document.createElement("canvas");
   await QRCode.toCanvas(c, data || " ", {
     width: Math.max(40, Math.round(size)),
-    margin: 0,
+    margin: 2, // zone de silence : evite que les coins/motifs soient rognes
     errorCorrectionLevel: "M",
     color: { dark: "#000000", light: "#ffffff" },
   });
