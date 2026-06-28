@@ -5,13 +5,9 @@ export type LabelData = {
   room: string;
   boxNumber: string;
   size: LabelSize;
+  /** Contenu encode dans le QR (URL vers la page photo, ou texte). */
+  qrData: string;
 };
-
-// Contenu encode dans le QR code : lisible par un humain ET parsable.
-export function qrPayload(data: LabelData): string {
-  const carton = data.boxNumber ? `Carton ${data.boxNumber}` : "Carton";
-  return `${data.room} | ${carton}`;
-}
 
 // Helper : ajuste la taille de police pour qu'un texte tienne dans maxWidth.
 function fitFont(
@@ -55,7 +51,7 @@ export async function renderLabel(
   // --- QR code (carre, cale a gauche) ---
   const qrSize = h - pad * 2;
   const qrCanvas = document.createElement("canvas");
-  await QRCode.toCanvas(qrCanvas, qrPayload(data), {
+  await QRCode.toCanvas(qrCanvas, data.qrData || " ", {
     width: qrSize,
     margin: 0,
     errorCorrectionLevel: "M",
@@ -76,13 +72,7 @@ export async function renderLabel(
 
   // Numero de carton (en dessous)
   const carton = data.boxNumber ? `Carton N°${data.boxNumber}` : "Carton N°—";
-  const cartonPx = fitFont(
-    ctx,
-    carton,
-    textW,
-    Math.round(h * 0.3),
-    "bold",
-  );
+  const cartonPx = fitFont(ctx, carton, textW, Math.round(h * 0.3), "bold");
   ctx.font = `bold ${cartonPx}px Arial, sans-serif`;
   ctx.fillText(carton, textX, pad + roomPx + Math.round(h * 0.08));
 

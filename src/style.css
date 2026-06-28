@@ -196,3 +196,75 @@ button:disabled {
   border-top: 1px solid var(--border);
   padding-top: 14px;
 }
+
+.photo-preview {
+  margin-top: 10px;
+}
+
+.photo-preview img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #0b1220;
+  border: 1px solid var(--border);
+}
+
+.btn-mini {
+  display: inline-block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+  width: auto;
+  margin-top: 8px;
+}
+
+.btn-mini:hover {
+  background: #334155;
+}
+
+.btn-mini.danger {
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+.btn-mini.danger:hover {
+  background: #450a0a;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 0.78rem;
+}
+
+.box-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.box-row:last-child {
+  border-bottom: none;
+}
+
+.box-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.badge {
+  margin-left: 6px;
+}

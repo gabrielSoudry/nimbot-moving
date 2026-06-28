@@ -1,52 +1,85 @@
-# 📦 Étiquettes de déménagement — Niimbot
+# 📦 Étiquettes de déménagement — Niimbot + Cloudflare
 
-Petite app web pour générer et imprimer des étiquettes de cartons de déménagement
-sur une imprimante **Niimbot**, basée sur la librairie de communication de
-[niimblue](https://github.com/MultiMote/niimblue) (`@mmote/niimbluelib`).
+App web pour générer/imprimer des étiquettes QR de cartons sur imprimante **Niimbot**,
+avec **sauvegarde dans Cloudflare KV** et **photo du contenu** consultable en scannant le QR.
 
-Tu choisis la **pièce** (Cuisine, Salle de bain, Chambre…) et le **numéro de carton**,
-l'app génère un **QR code** (qui contient « Pièce | Carton N »), affiche un aperçu de
-l'étiquette, et tu cliques sur **Imprimer**.
+Basée sur la lib de communication de [niimblue](https://github.com/MultiMote/niimblue)
+(`@mmote/niimbluelib`).
 
-## Lancer en local
+## Fonctionnalités
+
+- Choix de la **pièce** (liste déroulante native + « Autre… » pour saisie libre).
+- **N° de carton**, quantité, taille d'étiquette.
+- **Photo** du contenu (compressée dans le navigateur).
+- **QR code** → encode une URL `…/view?id=xxx`. En scannant, la page affiche la **photo
+  en grand + le N° de carton + la pièce**.
+- Bouton **Sauvegarder** → stocke le carton (métadonnées + photo) dans **Cloudflare KV**.
+- **Liste des cartons sauvegardés**, avec lien « Voir » et bouton **Supprimer**.
+- Bouton **Imprimer** (Bluetooth Niimbot).
+
+## Architecture
+
+- Frontend statique **Vite + TypeScript** (`index.html` = app, `view.html` = page photo).
+- Backend **Cloudflare Pages Functions** dans `functions/api/boxes/` :
+  - `GET  /api/boxes` — liste (métadonnées, sans photos)
+  - `POST /api/boxes` — créer / mettre à jour un carton
+  - `GET  /api/boxes/:id` — un carton + sa photo
+  - `DELETE /api/boxes/:id` — supprimer
+- Stockage **Cloudflare KV** (binding `BOXES`) : `box:<id>` = métadonnées, `photo:<id>` = JPEG base64.
+
+## Développement
+
+UI seule (sans sauvegarde, pour ajuster l'étiquette) :
 
 ```bash
 npm install
-npm run dev
+npm run dev          # http://localhost:5173  (Chrome / Edge)
 ```
 
-Ouvre ensuite http://localhost:5173 dans **Chrome** ou **Edge**.
+App complète avec API + KV local (sauvegarde, liste, photo, page /view) :
+
+```bash
+npm run cf:dev       # build + wrangler pages dev (KV local automatique)
+```
+
+## Déploiement Cloudflare Pages
+
+1. Connexion : `npx wrangler login`
+2. Crée le namespace KV :
+   ```bash
+   npx wrangler kv namespace create BOXES
+   ```
+   Copie l'`id` renvoyé dans **`wrangler.toml`** (remplace `TON_KV_ID`).
+3. Déploie :
+   ```bash
+   npm run cf:deploy
+   ```
+   (au premier déploiement, wrangler crée le projet Pages).
+
+> Alternative dashboard : connecte le repo Git sur Cloudflare Pages,
+> build command `npm run build`, output `dist`, puis lie le namespace KV
+> sous **Settings → Functions → KV namespace bindings** (variable `BOXES`).
+
+Une fois en ligne, l'app est servie en **https**, donc le Bluetooth fonctionne et les
+QR codes pointent vers la bonne URL publique.
 
 ## Utilisation
 
-1. Allume l'imprimante Niimbot.
-2. Clique sur **« Connecter l'imprimante »** → choisis-la dans la liste Bluetooth.
-3. Renseigne la pièce et le numéro de carton (l'aperçu se met à jour en direct).
-4. Choisis la quantité et la taille d'étiquette.
-5. Clique sur **« Imprimer »**.
+1. Allume l'imprimante, clique **« Connecter l'imprimante »** (Chrome/Edge).
+2. Choisis la pièce, le N° de carton, ajoute une photo si tu veux.
+3. **Sauvegarder** (le QR pointe vers la photo).
+4. **Imprimer**. **➕ Nouveau carton** réinitialise et incrémente le numéro.
+5. Scanne le QR collé sur le carton → la photo + le numéro s'affichent.
 
-## Important — Bluetooth
+## Bluetooth — rappel
 
-L'API Web Bluetooth ne fonctionne que :
-
-- sur **Chrome / Edge** (pas Firefox/Safari) ;
-- sur une page servie en **https** ou sur **localhost**.
-
-Donc `npm run dev` (localhost) fonctionne. Pour héberger l'app ailleurs, il faut du **https**.
-
-## Build de production
-
-```bash
-npm run build      # génère le dossier dist/
-npm run preview    # sert le build localement
-```
-
-Le dossier `dist/` est une app statique : tu peux la déposer sur n'importe quel
-hébergement **https** (Netlify, Vercel, GitHub Pages, etc.).
+Web Bluetooth = **Chrome / Edge** uniquement, sur **https** ou **localhost**.
 
 ## Personnalisation
 
-- **Liste des pièces** : `src/labels.ts` → tableau `ROOMS`.
-- **Tailles d'étiquettes** : `src/labels.ts` → `LABEL_SIZES`.
-- **Mise en page de l'étiquette** (texte/QR) : `src/render.ts`.
-- **Logique d'impression** : `src/printer.ts`.
+- Pièces : `src/labels.ts` (`ROOMS`).
+- Tailles d'étiquettes : `src/labels.ts` (`LABEL_SIZES`).
+- Mise en page étiquette : `src/render.ts`.
+- Page photo (scan) : `src/view.ts` / `src/view.css`.
+- Impression : `src/printer.ts`.
+- API / KV : `functions/api/boxes/`.

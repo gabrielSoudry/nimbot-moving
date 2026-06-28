@@ -1,0 +1,7 @@
+name = "nimbot-demenagement"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "dist"
+
+[[kv_namespaces]]
+binding = "BOXES"
+id = "e1b69ceecf0349eab457fef2727c13e8"
