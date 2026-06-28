@@ -7,7 +7,7 @@ export type Orientation = "horizontal" | "vertical";
 // pour ne pas deborder sur l'etiquette suivante (le gap entre etiquettes fait que
 // la zone imprimable est un peu plus courte que la cote nominale).
 // Augmente cette valeur si ca depasse encore, mets 0 si tu n'en veux pas.
-export const FEED_SAFETY_MM = 3;
+export const FEED_SAFETY_MM = 6;
 
 export type LabelData = {
   room: string;
