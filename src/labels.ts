@@ -26,8 +26,8 @@ export type LabelSize = {
 };
 
 export const LABEL_SIZES: LabelSize[] = [
-  { id: "50x30", label: "50 × 30 mm", widthMm: 50, heightMm: 30 },
   { id: "40x30", label: "40 × 30 mm", widthMm: 40, heightMm: 30 },
+  { id: "50x30", label: "50 × 30 mm", widthMm: 50, heightMm: 30 },
   { id: "40x20", label: "40 × 20 mm", widthMm: 40, heightMm: 20 },
   { id: "30x15", label: "30 × 15 mm", widthMm: 30, heightMm: 15 },
 ];

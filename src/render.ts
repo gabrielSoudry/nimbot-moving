@@ -21,7 +21,7 @@ function fitFont(
   weight = "bold",
   family = "Arial, sans-serif",
 ): number {
-  let px = startPx;
+  let px = Math.max(7, Math.round(startPx));
   ctx.font = `${weight} ${px}px ${family}`;
   while (px > 7 && ctx.measureText(text).width > maxWidth) {
     px -= 1;
@@ -30,10 +30,13 @@ function fitFont(
   return px;
 }
 
-async function makeQrCanvas(data: string, size: number): Promise<HTMLCanvasElement> {
+async function makeQrCanvas(
+  data: string,
+  size: number,
+): Promise<HTMLCanvasElement> {
   const c = document.createElement("canvas");
   await QRCode.toCanvas(c, data || " ", {
-    width: size,
+    width: Math.max(40, Math.round(size)),
     margin: 0,
     errorCorrectionLevel: "M",
     color: { dark: "#000000", light: "#ffffff" },
@@ -42,6 +45,7 @@ async function makeQrCanvas(data: string, size: number): Promise<HTMLCanvasEleme
 }
 
 // Dessine la composition (QR + texte) dans un repere logique lw x lh.
+// La composition remplit toute la surface (pas de marges blanches inutiles).
 function drawComposition(
   ctx: CanvasRenderingContext2D,
   lw: number,
@@ -49,54 +53,62 @@ function drawComposition(
   orientation: Orientation,
   data: LabelData,
   qr: HTMLCanvasElement,
+  qrSize: number,
+  pad: number,
 ): void {
+  ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "#000000";
   ctx.textBaseline = "top";
   const room = (data.room || "Pièce").toUpperCase();
   const carton = data.boxNumber ? `Carton N°${data.boxNumber}` : "Carton N°—";
 
   if (orientation === "vertical") {
-    // Portrait : QR en haut, texte dessous, centre.
-    const pad = Math.round(lw * 0.08);
-    const qrSize = Math.min(lw - pad * 2, Math.round(lh * 0.5));
-    ctx.drawImage(qr, (lw - qrSize) / 2, pad, qrSize, qrSize);
+    // Portrait : QR pleine largeur en haut, texte en dessous, le tout centre
+    // et reparti pour occuper toute la hauteur.
+    ctx.drawImage(qr, pad, pad, qrSize, qrSize);
 
     ctx.textAlign = "center";
     const cx = lw / 2;
-    let y = pad + qrSize + Math.round(lh * 0.04);
+    const top = pad + qrSize + Math.round(lh * 0.03);
+    const avail = lh - pad - top;
+    const textW = lw - pad * 2;
 
-    const roomPx = fitFont(ctx, room, lw - pad * 2, Math.round(lh * 0.16));
+    const roomPx = fitFont(ctx, room, textW, avail * 0.52);
+    const gap = Math.round(avail * 0.06);
+    const cartonPx = fitFont(ctx, carton, textW, avail * 0.34, "bold");
+
+    const blockH = roomPx + gap + cartonPx;
+    let y = top + Math.max(0, (avail - blockH) / 2);
+
     ctx.font = `bold ${roomPx}px Arial, sans-serif`;
     ctx.fillText(room, cx, y);
-    y += roomPx + Math.round(lh * 0.02);
-
-    const cartonPx = fitFont(ctx, carton, lw - pad * 2, Math.round(lh * 0.12));
+    y += roomPx + gap;
     ctx.font = `bold ${cartonPx}px Arial, sans-serif`;
     ctx.fillText(carton, cx, y);
   } else {
-    // Paysage : QR a gauche, texte a droite.
-    const pad = Math.round(lh * 0.06);
-    const qrSize = lh - pad * 2;
+    // Paysage : QR pleine hauteur a gauche, texte a droite (remplit la largeur).
     ctx.drawImage(qr, pad, pad, qrSize, qrSize);
 
     ctx.textAlign = "left";
     const textX = pad * 2 + qrSize;
     const textW = lw - textX - pad;
+    const avail = lh - pad * 2;
 
-    const roomPx = fitFont(ctx, room, textW, Math.round(lh * 0.42));
+    const roomPx = fitFont(ctx, room, textW, avail * 0.5);
+    const gap = Math.round(avail * 0.08);
+    const cartonPx = fitFont(ctx, carton, textW, avail * 0.34);
+
+    const blockH = roomPx + gap + cartonPx;
+    let y = pad + Math.max(0, (avail - blockH) / 2);
+
     ctx.font = `bold ${roomPx}px Arial, sans-serif`;
-    ctx.fillText(room, textX, pad);
-
-    const cartonPx = fitFont(ctx, carton, textW, Math.round(lh * 0.3));
+    ctx.fillText(room, textX, y);
+    y += roomPx + gap;
     ctx.font = `bold ${cartonPx}px Arial, sans-serif`;
-    ctx.fillText(carton, textX, pad + roomPx + Math.round(lh * 0.08));
+    ctx.fillText(carton, textX, y);
   }
 
-  // Cadre fin
   ctx.textAlign = "left";
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = Math.max(1, Math.round(Math.min(lw, lh) * 0.02));
-  ctx.strokeRect(0, 0, lw, lh);
 }
 
 /**
@@ -144,10 +156,11 @@ export async function renderLabel(
     ctx.rotate(Math.PI / 2);
   }
 
-  const qrSize = vertical
-    ? Math.min(lw - Math.round(lw * 0.16), Math.round(lh * 0.5))
-    : lh - Math.round(lh * 0.12);
-  const qr = await makeQrCanvas(data.qrData, Math.max(40, Math.round(qrSize)));
+  // Marge minimale = zone de silence du QR (necessaire pour le scan).
+  // QR pleine largeur (vertical) ou pleine hauteur (horizontal).
+  const pad = Math.round(Math.min(lw, lh) * 0.025);
+  const qrSize = vertical ? lw - pad * 2 : lh - pad * 2;
+  const qr = await makeQrCanvas(data.qrData, qrSize);
 
-  drawComposition(ctx, lw, lh, data.orientation, data, qr);
+  drawComposition(ctx, lw, lh, data.orientation, data, qr, qrSize, pad);
 }
