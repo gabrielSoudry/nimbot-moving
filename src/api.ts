@@ -4,6 +4,7 @@ export type BoxMeta = {
   id: string;
   room: string;
   boxNumber: string;
+  description: string;
   hasPhoto: boolean;
   createdAt: number;
 };
@@ -39,6 +40,7 @@ export async function saveBox(input: {
   id: string;
   room: string;
   boxNumber: string;
+  description: string;
   photo: string | null;
 }): Promise<BoxMeta> {
   const res = await fetch("/api/boxes", {

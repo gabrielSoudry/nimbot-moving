@@ -36,6 +36,11 @@ async function main() {
         <div class="head">
           <div class="room">${escapeHtml(box.room || "Pièce")}</div>
           <div class="carton">${carton}</div>
+          ${
+            box.description
+              ? `<div class="desc">${escapeHtml(box.description)}</div>`
+              : ""
+          }
         </div>
         ${
           box.photo

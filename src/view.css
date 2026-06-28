@@ -48,6 +48,13 @@ body {
   margin-top: 4px;
 }
 
+.desc {
+  margin-top: 10px;
+  font-size: 1.05rem;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
 .photo {
   width: 100%;
   height: auto;

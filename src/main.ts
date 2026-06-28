@@ -1,6 +1,6 @@
 import "./style.css";
 import { ROOMS, LABEL_SIZES } from "./labels";
-import { renderLabel, type LabelData } from "./render";
+import { renderLabel, type LabelData, type Orientation } from "./render";
 import { connect, disconnect, isConnected, printCanvas } from "./printer";
 import { compressImage } from "./photo";
 import {
@@ -43,14 +43,28 @@ app.innerHTML = `
         </div>
       </div>
 
+      <div class="row">
+        <div class="field">
+          <label for="size">Taille d'étiquette</label>
+          <select id="size">
+            ${LABEL_SIZES.map(
+              (s, i) =>
+                `<option value="${s.id}" ${i === 0 ? "selected" : ""}>${s.label}</option>`,
+            ).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label for="orientation">Orientation</label>
+          <select id="orientation">
+            <option value="vertical" selected>Vertical</option>
+            <option value="horizontal">Horizontal</option>
+          </select>
+        </div>
+      </div>
+
       <div class="field">
-        <label for="size">Taille d'étiquette</label>
-        <select id="size">
-          ${LABEL_SIZES.map(
-            (s, i) =>
-              `<option value="${s.id}" ${i === 0 ? "selected" : ""}>${s.label}</option>`,
-          ).join("")}
-        </select>
+        <label for="desc">Description (stockée, pas sur l'étiquette)</label>
+        <textarea id="desc" rows="2" maxlength="500" placeholder="Ex. Vaisselle fragile, à ouvrir en premier…"></textarea>
       </div>
 
       <div class="field">
@@ -99,6 +113,8 @@ const roomOtherEl = $<HTMLInputElement>("room-other");
 const boxEl = $<HTMLInputElement>("box");
 const qtyEl = $<HTMLInputElement>("qty");
 const sizeEl = $<HTMLSelectElement>("size");
+const orientationEl = $<HTMLSelectElement>("orientation");
+const descEl = $<HTMLTextAreaElement>("desc");
 const photoEl = $<HTMLInputElement>("photo");
 const photoPreview = $<HTMLDivElement>("photo-preview");
 const photoImg = $<HTMLImageElement>("photo-img");
@@ -138,6 +154,7 @@ function currentData(): LabelData {
     room: currentRoom(),
     boxNumber: boxEl.value.trim(),
     size,
+    orientation: orientationEl.value as Orientation,
     qrData: qrUrl(),
   };
 }
@@ -163,7 +180,9 @@ roomEl.addEventListener("change", () => {
   updatePreview();
 });
 roomOtherEl.addEventListener("input", updatePreview);
-[boxEl, sizeEl].forEach((el) => el.addEventListener("input", updatePreview));
+[boxEl, sizeEl, orientationEl].forEach((el) =>
+  el.addEventListener("input", updatePreview),
+);
 
 // --- Photo ---
 photoEl.addEventListener("change", async () => {
@@ -232,6 +251,7 @@ saveBtn.addEventListener("click", async () => {
       id: draftId,
       room,
       boxNumber: boxEl.value.trim(),
+      description: descEl.value.trim(),
       photo: photoData,
     });
     setStatus("Carton sauvegardé ✓", "ok");
@@ -254,8 +274,10 @@ printBtn.addEventListener("click", async () => {
   printBtn.disabled = true;
   setStatus("Impression en cours…");
   try {
-    await renderLabel(canvas, data);
-    await printCanvas(canvas, {
+    // Canvas dedie a l'impression : geometrie imprimante (contenu pivote si vertical).
+    const printCanvasEl = document.createElement("canvas");
+    await renderLabel(printCanvasEl, data, true);
+    await printCanvas(printCanvasEl, {
       quantity,
       onProgress: (page, total) => setStatus(`Impression ${page}/${total}…`),
     });
@@ -275,6 +297,7 @@ newBtn.addEventListener("click", () => {
   draftId = shortId();
   photoData = null;
   photoEl.value = "";
+  descEl.value = "";
   photoPreview.style.display = "none";
   const next = parseInt(boxEl.value, 10);
   boxEl.value = Number.isFinite(next) ? String(next + 1) : "";
@@ -307,13 +330,25 @@ async function refreshList() {
   }
 }
 
+function esc(s: string): string {
+  const map: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+  return s.replace(/[&<>"']/g, (c) => map[c]);
+}
+
 function renderRow(b: BoxMeta): string {
-  const carton = b.boxNumber ? `Carton N°${b.boxNumber}` : "Carton";
+  const carton = b.boxNumber ? `Carton N°${esc(b.boxNumber)}` : "Carton";
   return `
     <div class="box-row" data-id="${b.id}">
       <div class="box-info">
-        <strong>${b.room || "Pièce"}</strong> — ${carton}
+        <strong>${esc(b.room) || "Pièce"}</strong> — ${carton}
         ${b.hasPhoto ? '<span class="badge">📷</span>' : ""}
+        ${b.description ? `<div class="muted small">${esc(b.description)}</div>` : ""}
         <div class="muted small">${fmtDate(b.createdAt)}</div>
       </div>
       <div class="box-actions">

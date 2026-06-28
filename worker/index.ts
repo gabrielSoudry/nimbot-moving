@@ -9,6 +9,7 @@ type BoxMeta = {
   id: string;
   room: string;
   boxNumber: string;
+  description: string;
   hasPhoto: boolean;
   createdAt: number;
 };
@@ -42,6 +43,7 @@ async function saveBox(request: Request, env: Env): Promise<Response> {
     id?: string;
     room?: string;
     boxNumber?: string;
+    description?: string;
     photo?: string | null;
   };
   try {
@@ -67,6 +69,7 @@ async function saveBox(request: Request, env: Env): Promise<Response> {
     id,
     room: (body.room ?? "").trim(),
     boxNumber: (body.boxNumber ?? "").trim(),
+    description: (body.description ?? "").trim(),
     hasPhoto,
     createdAt: existing?.createdAt ?? Date.now(),
   };
