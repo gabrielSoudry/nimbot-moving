@@ -364,7 +364,12 @@ function renderRow(b: BoxMeta): string {
 function wireRow(b: BoxMeta) {
   const btn = listEl.querySelector<HTMLButtonElement>(`[data-del="${b.id}"]`);
   btn?.addEventListener("click", async () => {
-    if (!confirm("Supprimer ce carton ?")) return;
+    const pwd = prompt("Mot de passe pour supprimer ce carton :");
+    if (pwd === null) return;
+    if (pwd !== "gab1") {
+      setStatus("Mot de passe incorrect.", "err");
+      return;
+    }
     btn.disabled = true;
     try {
       await deleteBox(b.id);
