@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nimbot-moving",
+  "compatibility_date": "2026-06-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  // Point d'entree du Worker : gere /api/*, le reste part vers les assets statiques.
+  "main": "./worker/index.ts",
+  "assets": {
+    // Binding pour servir dist/ (index.html, view.html, assets…) depuis le Worker.
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "kv_namespaces": [
+    {
+      // Namespace KV : cartons + photos.
+      // id via : npx wrangler kv namespace create BOXES
+      "binding": "BOXES",
+      "id": "e1b69ceecf0349eab457fef2727c13e8"
+    }
+  ]
+}

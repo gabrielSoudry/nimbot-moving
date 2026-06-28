@@ -7,15 +7,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview --host",
-    "cf:dev": "npm run build && wrangler pages dev",
-    "cf:deploy": "npm run build && wrangler pages deploy"
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@mmote/niimbluelib": "0.0.1-alpha.40",
     "qrcode": "1.5.4"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.42.3",
     "@cloudflare/workers-types": "^4.20260628.1",
     "@types/qrcode": "1.5.5",
     "typescript": "5.6.3",
